@@ -67,34 +67,9 @@ def load_flow_past_cylinder(train_len=500, val_len=500):
     return X, Y, X_val, Y_val, orig_shape
 
 
-def load_noised_flow_past_cylinder(train_len=500, val_len=500):
-    data = read_h5_data("noised_cyl_data5k.h5", "n_0_4")
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_JHU(train_len=3000, val_len=250, step=1):
-    # max 5024
-    data = read_h5_data("JHU_isocoarse4.h5", "curl")
-    data = data[::step]
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
 def load_bickley(train_len=200, val_len=100):
-    # max 5024
     data = read_h5_data("smsqbickley_cont.h5", "data")
     data = data[::1, ::2, ::2]
-    # data = data - torch.mean(data, axis=0)
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_SST(train_len=1000, val_len=500):
-    # max 1584
-    # data = read_h5_data('sst_mean.h5', 'sst_mean')
-    data = read_h5_data("sst_mean.h5", "sst_mean")
-    data -= torch.mean(data, axis=0)
     X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
     return X, Y, X_val, Y_val, orig_shape
 
@@ -104,74 +79,6 @@ def load_SST_gulf(train_len=1000, val_len=500):
     # data = read_h5_data('sst_mean.h5', 'sst_mean')
     data = read_h5_data("small_sst_mean.h5", "gulf")
     data -= torch.mean(data, axis=0)
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_SST_enso(train_len=1000, val_len=500):
-    # max 1584
-    # data = read_h5_data('sst_mean.h5', 'sst_mean')
-    data = read_h5_data("small_sst_mean.h5", "enso")
-    data -= torch.mean(data, axis=0)
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_TBL04(train_len=500, val_len=500, ten_step=False):
-    # max 5k
-    if ten_step:
-        key = "frames_10step"
-    else:
-        key = "frames"
-    data = read_h5_data("TBL04.h5", key)
-    data = torch.nan_to_num(data, 0.0)
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_JAXturb(train_len=1000, val_len=500, square_shape=256, stride=8):
-    # max 3900
-    data = read_h5_data("forced_iso_jax_2.h5", "vorticity")
-    data = data[:, ::stride, ::stride]
-    print(data.shape)
-    # data = data[:,:square_shape,:square_shape]
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_noisedJAXturb(train_len=1000, val_len=500, square_shape=256, stride=1):
-    # max 3900
-    data = read_h5_data("noised_forced_iso_jax01.h5", "vorticity")
-    data = data[:, ::stride, ::stride]
-    # data = data[:,:square_shape,:square_shape]
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_sstanom(train_len=1500, val_len=500):
-    # max 2191
-    data = read_h5_data("gulf_sst_anom_18_23.h5", "data")
-    # data = read_h5_data('gulf_sst_anom_zoom_18_23.h5', 'data')
-    data = data[:, ::2, ::2]
-    print(data.shape)
-    X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
-    return X, Y, X_val, Y_val, orig_shape
-
-
-def load_aaolt23(train_len=3000, val_len=500):
-    # max 21504
-    fn = "ml_0237_M06.h5"
-    data_key = "opd"
-
-    contents = {}
-    with h5.File(os.path.join("data", fn), "r") as df:
-        for key in [data_key]:
-            contents[key] = torch.tensor(df[key], dtype=torch.float32)
-    data = contents[data_key]
-    data = torch.nan_to_num(data, 0.0)
-    # return data
-    # data = read_h5_data('ml_0237_M06.h5', 'opd')
-    print(data.shape)
     X, Y, X_val, Y_val, orig_shape = simple_preprocess_data(data, train_len, val_len)
     return X, Y, X_val, Y_val, orig_shape
 
@@ -449,10 +356,6 @@ def print_arch(model):
     print("Decoder:", model.decoder)
 
 
-# def spectral_norm(layer):
-#     spectrally_normalized_weight = layer.weight_u.squeeze() / layer.weight_v.squeeze()
-
-
 def linear_schedule(zero_index, max_index):
     epochs = torch.arange(max_index)
     schedule = torch.nn.functional.relu(torch.tensor(1 - epochs / zero_index))
@@ -569,20 +472,6 @@ def load_and_eig_f_final_model(
     return eig_fs
 
 
-def eig_comp(
-    input_size,
-    output_size,
-    layers,
-    latent_dim,
-    base_dir,
-    siae_dir,
-    dmd_op_path,
-    plotter,
-    save_fn_append="",
-):
-    pass
-
-
 def ssim(base, pred):
     (score, diff) = structural_similarity(base, pred, full=True, data_range=2.0)
     return score
@@ -641,25 +530,6 @@ def compute_dmd_operator(X, Y, r=None):
 
     return A
 
-
-# TODO
-def linear_error_rejection_approx(n_samples, bw_range):
-    """
-    construct a linear error rejection function approximation
-    """
-
-
-# TODO
-def bw_sweep(pred_series, data, bw_range):
-    """
-    use a linear error rej approximation to sweep bws for control
-    """
-
-
-def latent_pred_error():
-    pass
-
-
 def spectral_error(data, model):
     def interpolate_psd(eig_fs, f, psd):
         interp_psd = torch.zeros_like(eig_fs)
@@ -705,7 +575,7 @@ def spectral_error(data, model):
     return reg_loss
 
 
-# TODO clean up big time
+# TODO clean up this function
 def fourier_error(data, model, pred_steps, fft_stride=1):
     # first compute the target fft
     with torch.no_grad():
@@ -730,10 +600,6 @@ def fourier_error(data, model, pred_steps, fft_stride=1):
                 fft = torch.abs(torch.fft.rfft(preds[:, i, j]))
                 sum_fft += fft
 
-        # if self.train_data is not None:
-        #     target = self.target_psd
-        # else:
-        #     target = torch.pow(torch.arange(1,len(sum_fft)+1,dtype=torch.float64), -2)
         target = data_spectrum
         target = target / torch.sum(target[1:])
 
@@ -742,7 +608,6 @@ def fourier_error(data, model, pred_steps, fft_stride=1):
         error = error[1:]  # skip first value due to computational issues
 
         reg_loss = torch.sum((error) ** 2) / error.shape[0]
-        # reg_loss = torch.sum(torch.abs(error)) / error.shape[0]
     return reg_loss
 
 
@@ -774,7 +639,6 @@ def encoded_psd(data, model, pred_steps, fft_stride=1, scale_eigs=True):
                 dyn_fft += fft
 
         dyn_fft /= torch.sum(dyn_fft[1:])
-        # dyn_fft /= torch.max(dyn_fft[1:])
 
     return dyn_fft
 
@@ -797,22 +661,3 @@ def recon_psd(data, model, pred_steps, fft_stride=1):
     dyn_fft /= torch.sum(dyn_fft[1:])
 
     return dyn_fft
-
-
-# # Define the power law function
-# def power_law(x, a, b):
-#     return a * (x ** b)
-
-# # Sample data
-# x_data = np.array([1, 2, 3, 4, 5])
-# y_data = np.array([1.2, 2.3, 3.5, 4.6, 5.7])
-
-# # Fit the power law to the data
-# params, covariance = curve_fit(power_law, x_data, y_data)
-
-# # Extract the parameters
-# a, b = params
-
-# # Print the parameters
-# print("a:", a)
-# print("b:", b)
